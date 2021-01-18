@@ -1,19 +1,62 @@
 package main
 
 import (
-	"net/http"
-
+	"context"
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
+	"net/http"
+	"time"
 )
 
 type Application struct {
 	Router   http.Handler
-	Database map[string]string
+	Database Database
+}
+type Database struct {
+	Library Library
+	Loans   map[string]string
+}
+
+type Member struct {
+	name string
+	id   uint16
+}
+
+type Library struct {
+	Members []string
+}
+
+func (l *Library) HasMember (memberName string) bool {
+	for _, member := range l.Members {
+		if memberName == member {
+			return true
+		}
+	}
+
+	return false
 }
 
 func NewApplication() *Application {
+
 	app := &Application{
-		Database: make(map[string]string),
+		Database: Database{
+			Library: Library{
+				Members: []string{},
+			},
+			Loans:   make(map[string]string),
+		},
+	}
+
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:2017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
 	}
 	app.newRouter()
 	return app
@@ -33,17 +76,38 @@ type RegisterRequest struct {
 	LibraryName string `json:"library_name"`
 }
 
+type BorrowRequest struct {
+	MemberName string `json:"member_name"`
+	BookName   string `json:"book_name"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func (a *Application) register(c echo.Context) error {
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	// magic happens here ...
+
 	// member gets registered
+	a.Database.Library.Members = append(a.Database.Library.Members, req.MemberName)
 	return c.JSON(http.StatusCreated, &req)
 }
 
 func (a *Application) borrow(c echo.Context) error {
-	// implement borrowing
-	return c.String(http.StatusCreated, "")
+	var req BorrowRequest
+	if err := c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if a.Database.Library.HasMember(req.MemberName) {
+		a.Database.Loans[req.MemberName] = req.BookName
+		return c.JSON(http.StatusCreated, "")
+	}
+
+	var response ErrorResponse
+	response.Message = "Only members can borrow books"
+	return c.JSON(http.StatusUnauthorized, &response)
 }
