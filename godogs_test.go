@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -14,9 +15,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type TestContext struct {
+	response *http.Response
+}
+
 type libraryFeature struct {
 	err error
 	app *Application
+	context TestContext
 }
 
 func (f *libraryFeature) Errorf(format string, args ...interface{}) {
@@ -42,6 +48,7 @@ func (f *libraryFeature) jonHasRegisteredAsAMemberOfHackneyLibrary(memberName st
 	f.app.Router.ServeHTTP(w, req)
 
 	resp := w.Result()
+
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	assert.Equal(f, 201, resp.StatusCode)
@@ -51,12 +58,24 @@ func (f *libraryFeature) jonHasRegisteredAsAMemberOfHackneyLibrary(memberName st
 	return f.err
 }
 
-func (f *libraryFeature) jonHasNotRegisteredAsAMemberOfHackneyLibrary() error {
-	return godog.ErrPending
+func (f *libraryFeature) jonHasNotRegisteredAsAMemberOfHackneyLibrary(memberName string, libraryName string) error {
+	assert.False(f, f.app.Database.Library.HasMember(memberName))
+
+	return f.err
 }
 
-func (f *libraryFeature) jonShouldBeTold(message string) error {
-	return godog.ErrPending
+func (f *libraryFeature) jonShouldBeTold(memberName string, expectedMessage string) error {
+
+	assert.Equal(f, 401, f.context.response.StatusCode)
+
+	body, _ := ioutil.ReadAll(f.context.response.Body)
+
+	var response map[string]interface{}
+	_ = json.Unmarshal(body, &response)
+
+	assert.Equal(f, expectedMessage, response["message"])
+
+	return f.err
 }
 
 func (f *libraryFeature) jonTriesToBorrowTheBook(memberName string, bookName string) error {
@@ -72,18 +91,22 @@ func (f *libraryFeature) jonTriesToBorrowTheBook(memberName string, bookName str
 	}
 
 	req := httptest.NewRequest("PUT", "http://example.com/borrow", bytes.NewReader(data))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	f.app.Router.ServeHTTP(w, req)
-	resp := w.Result()
 
-	assert.Equal(f, 201, resp.StatusCode)
+	f.context.response = w.Result()
+
 
 	return f.err
 }
 
-func (f *libraryFeature) theBookShouldHaveBeenLoanedToJon(bookName string) error {
-	return assert.AnError
+func (f *libraryFeature) theBookShouldHaveBeenLoanedToJon(bookName string, memberName string) error {
+	assert.Equal(f, http.StatusCreated, f.context.response.StatusCode)
+	assert.Equal(f, bookName, f.app.Database.Loans[memberName])
+
+	return f.err
 }
 
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {

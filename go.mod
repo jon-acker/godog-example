@@ -10,4 +10,5 @@ require (
 	github.com/onsi/gomega v1.10.4
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
+	go.mongodb.org/mongo-driver v1.4.4
 )
