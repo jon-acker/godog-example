@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"os"
@@ -13,7 +12,5 @@ var opts = godog.Options{
 }
 
 func init() {
-	godog.BindFlags("godogt.", flag.CommandLine, &opts)
+	godog.BindCommandLineFlags("godogt.", &opts)
 }
-
-

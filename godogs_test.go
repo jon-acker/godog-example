@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -20,8 +21,8 @@ type TestContext struct {
 }
 
 type libraryFeature struct {
-	err error
-	app *Application
+	err     error
+	app     *Application
 	context TestContext
 }
 
@@ -98,7 +99,6 @@ func (f *libraryFeature) jonTriesToBorrowTheBook(memberName string, bookName str
 
 	f.context.response = w.Result()
 
-
 	return f.err
 }
 
@@ -116,8 +116,9 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 }
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
-	ctx.BeforeScenario(func(*godog.Scenario) {
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
 		// clean the state before every scenario
+		return ctx, nil
 	})
 
 	f := &libraryFeature{

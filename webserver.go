@@ -19,16 +19,11 @@ type Database struct {
 	Loans   map[string]string
 }
 
-type Member struct {
-	name string
-	id   uint16
-}
-
 type Library struct {
 	Members []string
 }
 
-func (l *Library) HasMember (memberName string) bool {
+func (l *Library) HasMember(memberName string) bool {
 	for _, member := range l.Members {
 		if memberName == member {
 			return true
@@ -45,7 +40,7 @@ func NewApplication() *Application {
 			Library: Library{
 				Members: []string{},
 			},
-			Loans:   make(map[string]string),
+			Loans: make(map[string]string),
 		},
 	}
 
@@ -53,11 +48,13 @@ func NewApplication() *Application {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	cancel()
 	app.newRouter()
 	return app
 }
