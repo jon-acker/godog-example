@@ -54,7 +54,7 @@ func NewApplication() *Application {
 		log.Fatal(err)
 	}
 
-	cancel()
+	defer cancel()
 	app.newRouter()
 	return app
 }
