@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4" //nolint:unused
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -34,7 +34,6 @@ func (l *Library) HasMember(memberName string) bool {
 }
 
 func NewApplication() *Application {
-
 	app := &Application{
 		Database: Database{
 			Library: Library{
