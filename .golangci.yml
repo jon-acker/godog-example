@@ -1,0 +1,11 @@
+run:
+  timeout: 1m
+  disable-all: true
+
+linters:
+  fast: true
+  enable:
+    - gofmt
+    - unused
+    - golint
+

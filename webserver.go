@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/labstack/echo/v4" //nolint:unused
+	echo "github.com/labstack/echo/v4" //nolint:unused
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -60,7 +60,6 @@ func NewApplication() *Application {
 
 func (a *Application) newRouter() {
 	e := echo.New()
-
 	e.POST("/register", a.register)
 	e.PUT("/borrow", a.borrow)
 
